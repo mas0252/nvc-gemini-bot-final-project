@@ -33,7 +33,7 @@ if not GEMINI_API_KEY:
 
 # --- ตั้งค่า Gemini API ---
 genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel('gemini 2.0 Flash')
+gemini_model = genai.GenerativeModel('gemini-2.0-flash')
 
 # --- เตรียมข้อมูล Context ของวิทยาลัยฯ สำหรับ Gemini ---
 # **สำคัญ:** คุณสามารถขยายข้อมูลนี้ให้ละเอียดและครอบคลุมมากขึ้นได้เลย
