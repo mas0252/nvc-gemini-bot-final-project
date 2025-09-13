@@ -3,7 +3,7 @@ import logging
 import time
 from flask import Flask, request, jsonify
 from telegram import Update
-from telegram.ext import Application, MessageHandler, CommandHandler
+from telegram.ext import Application, MessageHandler, CommandHandler, ContextTypes
 from telegram.ext.filters import TEXT as TEXT_FILTER
 import google.generativeai as genai
 import pdfplumber
