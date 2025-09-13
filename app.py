@@ -6,8 +6,10 @@ from telegram import Update
 from telegram.ext import Application, MessageHandler, CommandHandler
 from telegram.ext.filters import TEXT as TEXT_FILTER
 import google.generativeai as genai
+import pdfplumber
+import asyncio
 
-# --- การตั้งค่า Logging ---
+#    -
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -60,6 +62,37 @@ Facebook Page: วิทยาลัยอาชีวศึกษานคร�
 * มีกิจกรรมชมรมหลากหลาย เช่น ชมรมดนตรี, ชมรมกีฬา, ชมรมอาสาพัฒนา
 * ภารกิจหลักคือการผลิตและพัฒนากำลังคนด้านอาชีวศึกษา
 """
+
+
+def read_pdf_text(file_path):
+    text = ""
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            for page in pdf.pages:
+                text += page.extract_text()
+    except Exception as e:
+        logging.error(f"Error reading PDF file: {e}")
+        return None
+    return text
+
+# อ่านเนื้อหาจากไฟล์ PDF ตั้งแต่เริ่มต้น
+PDF_CONTEXT_TEXT = read_pdf_text("data.pdf")
+
+# (โค้ดส่วนอื่น ๆ เช่น log, flask app)
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # (โค้ดสำหรับดึงข้อความจากผู้ใช้)
+    user_message = update.message.text
+    chat_id = update.effective_chat.id
+
+    # สร้าง prompt_parts สำหรับส่งให้ Gemini
+    prompt_parts = [
+        # เพิ่มข้อมูลบริบทจาก PDF เข้าไปใน Prompt
+        f"ข้อมูลการศึกษาต่อวิทยาลัยอาชีวศึกษานครศรีธรรมราช:\n{PDF_CONTEXT_TEXT}\n\n"
+        f"จากข้อมูลข้างต้น, โปรดตอบคำถามนี้:\n{user_message}",
+    ]
+
+
 
 # --- สร้าง Application instance สำหรับ Telegram Bot ---
 application = Application.builder().token(BOT_TOKEN).build()
@@ -169,4 +202,3 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=5000, debug=True)
     else:
         logger.info("Running in production mode (for Render.com), Gunicorn will handle the app.")
-
