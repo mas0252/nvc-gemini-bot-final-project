@@ -225,26 +225,30 @@ application.add_handler(MessageHandler(TEXT_FILTER, handle_message))
 
 
 # --- Webhook Endpoint ของ Flask ---
+# --- Webhook Endpoint ของ Flask ---
 @app.route(f'/{BOT_TOKEN}', methods=['POST'])
 async def webhook():
-    """รับและประมวลผล Webhook จาก Telegram."""
     start_time_webhook = time.time()
-    if request.method != "POST":
-        logger.warning(f"Received non-POST request to webhook endpoint. Method: {request.method}")
-        return jsonify({"status": "method not allowed"}), 405
-    
-    json_data = request.get_json(force=True)
-    logger.debug(f"Received webhook data: {json_data}") # เปลี่ยนเป็น debug เพื่อลด log verbosity
-
-    try:
-        # ใช้ application.update_queue.put(update) สำหรับการจัดการ Asynchronous ที่ดีขึ้น
-        update = Update.de_json(json_data, application.bot)
-        await application.process_update(update)
-        logger.info(f"Webhook processed successfully. Time: {time.time() - start_time_webhook:.4f}s")
-        return jsonify({"status": "ok"})
-    except Exception as e:
-        logger.error(f"Error processing update in webhook: {e}", exc_info=True)
-        return jsonify({"status": "error", "message": str(e)}), 400
+    if request.method == "POST":
+        json_data = request.get_json(force=True)
+        logger.info(f"Received webhook data: {json_data}")
+        
+        try:
+            # แก้ไข: ต้องเรียกใช้ initialize() และ shutdown() ในโหมด Webhook
+            await application.initialize() # <--- ทำให้ Application พร้อมทำงาน
+            update = Update.de_json(json_data, application.bot)
+            await application.process_update(update)
+            await application.shutdown() # <--- ปิดการทำงาน (คืนทรัพยากร)
+            
+            logger.info("Update processed successfully within webhook.")
+            return jsonify({"status": "ok"})
+        except Exception as e:
+            end_time_webhook = time.time()
+            logger.error(f"Error processing update in webhook: {e}. Total webhook processing time: {end_time_webhook - start_time_webhook:.4f} seconds")
+            return jsonify({"status": "error", "message": str(e)}), 400
+            
+    logger.warning(f"Received non-POST request to webhook endpoint. Method: {request.method}")
+    return jsonify({"status": "method not allowed"}), 405
 
 
 # --- ส่วนสำหรับรัน Flask App ---
