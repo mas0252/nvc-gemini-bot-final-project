@@ -49,6 +49,7 @@ pydantic_core==2.41.4
 PyJWT==2.10.1
 pyparsing==3.2.3
 pypdfium2==4.30.0
+python-dotenv==1.2.1
 python-telegram-bot==22.1
 realtime==2.22.2
 requests==2.32.4
