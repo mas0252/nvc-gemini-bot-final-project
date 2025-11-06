@@ -60,7 +60,7 @@ else:
     logger.warning("SUPABASE_URL or SUPABASE_KEY not found. Supabase features disabled.")
 
 # --- Supabase Helper Functions ---
-def save_chat_history(chat_id: int, sender: str, message: str):
+def save_chat_history(chat_id: int, sender: str, message: str, username: str = None,):
     """บันทึกข้อความลงใน Supabase chat_history table."""
     if not supabase:
         logger.debug("Supabase not initialized, skipping chat history save.")
@@ -69,7 +69,8 @@ def save_chat_history(chat_id: int, sender: str, message: str):
         data = {
             "chat_id": str(chat_id),
             "sender": sender,
-            "message": message
+            "message": message,
+            "username": username
         }
         supabase.table('chat_history').insert(data).execute()
         logger.debug(f"Saved chat history for chat_id {chat_id}, sender {sender}.")
@@ -240,7 +241,7 @@ application.add_handler(CommandHandler("start", start_command))
 application.add_handler(MessageHandler(TEXT_FILTER, handle_message))
 
 
-# --- Webhook Endpoint ของ Flask ---
+
 # --- Webhook Endpoint ของ Flask ---
 @app.route(f'/{BOT_TOKEN}', methods=['POST'])
 async def webhook():
