@@ -125,6 +125,20 @@ def read_pdf_text(file_path):
 
 PDF_CONTEXT_TEXT = read_pdf_text("dataNVC.pdf")
 
+# --- Image Mapping สำหรับตอบด้วยรูปภาพ ---
+# บอทจะมองหาคีย์เวิร์ดในคำถามของผู้ใช้
+# หากพบ จะส่งรูปภาพที่ระบุ
+IMAGE_MAP = {
+    # คีย์เวิร์ด (Key): ('ชื่อไฟล์ในโฟลเดอร์ images/', 'คำบรรยายรูปภาพ')
+    "แผนที่": ('images/map.png', 'แผนที่และผังอาคารวิทยาลัย'),
+    "ที่ตั้ง": ('images/map_main.png', 'แผนที่และผังอาคารวิทยาลัย'),
+    "อาคาร 1": ('images/building_1_admin.jpg', 'อาคาร 1 (อาคารอำนวยการ)'),
+    "อาคารอำนวยการ": ('images/building_1_admin.jpg', 'อาคาร 1 (อาคารอำนวยการ)'),
+    "อาคาร 2": ('images/building_2_tech.jpg', 'อาคาร 2 (แผนกช่าง)'),
+    "อาคาร 3": ('images/building_3_commerce.jpg', 'อาคาร 3 (แผนกพณิชยการ)'),
+    # เพิ่มคีย์เวิร์ดและรูปภาพอื่น ๆ ตามต้องการ
+}
+
 # --- Telegram Bot Handlers ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -146,28 +160,37 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     except Exception as e:
         logger.error(f"Error sending start response to {chat_id}: {e}")
 
+# --- Handler สำหรับข้อความทั่วไป (Core Logic พร้อม Gemini API, Supabase และ Image Map) ---
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """จัดการข้อความทั่วไปจากผู้ใช้ ประมวลผลด้วย Gemini API และบันทึกประวัติการแชท."""
+    """จัดการข้อความทั่วไป, เรียก Gemini, และส่งรูปภาพเสริม (ถ้ามี)"""
     start_time = time.time()
+    
+    # 1. ตรวจสอบข้อความเบื้องต้น
     if not update.message or not update.message.text:
         logger.info("Received an update without a text message, ignoring.")
         return
 
     user_message = update.message.text
     chat_id = update.message.chat_id
-    user_name = update.message.from_user.first_name if update.message.from_user else "ผู้ใช้งาน"
+    
+    # 2. 🆕 ดึงข้อมูลผู้ใช้ (สำหรับ logging และ Supabase)
+    user = update.message.from_user
+    username = user.username if user.username else user.first_name 
+    user_name_log = user.first_name if user.first_name else "ผู้ใช้งาน"
 
-    logger.info(f"Processing message from {user_name} ({chat_id}): \"{user_message}\"")
+    logger.info(f"Received message from {user_name_log} ({chat_id}): \"{user_message}\" at {time.strftime('%H:%M:%S', time.localtime(start_time))}")
 
     try:
-        # 1. บันทึกข้อความผู้ใช้
-        save_chat_history(chat_id, 'user', user_message)
+        # 3. 🟢 บันทึกข้อความผู้ใช้ทันที
+        save_chat_history(chat_id, 'user', user_message, username) 
 
-        # 2. ดึงประวัติการแชทและข้อมูล PDF
-        chat_history_text = get_chat_history(chat_id, limit=8) # อาจเพิ่ม limit เป็น 8 หรือ 10 เพื่อให้ได้บริบทที่ยาวขึ้น
+        # 4. 🟡 ดึงประวัติการแชท (บริบท)
+        chat_history_text = get_chat_history(chat_id, limit=8) # (ใช้ limit 8 ตามโค้ดล่าสุดของคุณ)
         
-        # 3. สร้าง Prompt สำหรับ Gemini API
-        # ปรับปรุง Prompt ให้ชัดเจนขึ้นและเน้นการอ้างอิงข้อมูลที่ให้มาเท่านั้น
+        # 5. ดึงบริบทจากไฟล์ (หรือ PDF)
+        pdf_text = PDF_CONTEXT_TEXT # (ตรวจสอบว่า PDF_CONTEXT_TEXT ถูกโหลดไว้ด้านบนแล้ว)
+
+        # 6. สร้าง Prompt ที่สมบูรณ์สำหรับ Gemini (ใช้ Prompt ที่คุณปรับปรุงแล้ว)
         gemini_prompt = f"""
         คุณคือแชทบอทผู้เชี่ยวชาญด้านข้อมูลของวิทยาลัยอาชีวศึกษานครศรีธรรมราช (NVC Assistant)
         ***
@@ -188,13 +211,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         ***
 
         ### 📘 ข้อมูลบริบทของวิทยาลัย (College Context)
-        [ใส่ **{PDF_CONTEXT_TEXT}** ที่ดึงมาจากไฟล์]
+        {pdf_text}
 
         ### 💬 ประวัติการสนทนา (Chat History)
-        [ใส่ **{chat_history_text}** ที่ดึงมาจาก Supabase]
+        {chat_history_text}
 
         ### ❓ คำถามของผู้ใช้ (User's Question)
-        [ใส่ **{user_message}**]
+        {user_message}
 
         ***
 
@@ -202,30 +225,63 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         [เริ่มต้นคำตอบด้วยภาษาที่สุภาพและตรงประเด็น]
         """
         
-        # 4. ส่ง Prompt ไปยัง Gemini API และรับคำตอบ
+        # 7. 🧠 เรียก Gemini API (ทำงานนี้ก่อนเสมอ)
         gemini_response = gemini_model.generate_content(gemini_prompt)
         
-        # ตรวจสอบ Response จาก Gemini อย่างละเอียด
+        # (โค้ดตรวจสอบ Response จาก Gemini ที่คุณมีอยู่)
         response_text = ""
         if gemini_response and gemini_response.text:
             response_text = gemini_response.text
         elif gemini_response and gemini_response.parts:
-            # บางครั้ง Gemini อาจคืนเป็น parts ถ้า .text ไม่ได้ถูกตั้งค่า
             response_text = "".join(part.text for part in gemini_response.parts if hasattr(part, 'text'))
         
-        if not response_text.strip(): # ตรวจสอบอีกครั้งว่ามีข้อความหรือไม่
+        if not response_text.strip():
             response_text = "ขออภัยครับ เกิดข้อผิดพลาดในการประมวลผลคำถามของคุณ หรือ Gemini ไม่สามารถสร้างคำตอบที่เหมาะสมได้ในขณะนี้ กรุณาลองใหม่อีกครั้งครับ"
             logger.warning(f"Gemini returned empty or invalid response for chat_id {chat_id}.")
 
+        # 8. 📤 ส่งคำตอบที่เป็นข้อความ (Text Response)
+        # ⭐️ ส่งคำตอบจาก Gemini ไปให้ผู้ใช้ก่อน
         await context.bot.send_message(chat_id=chat_id, text=response_text)
-        
-        # 5. บันทึกคำตอบของบอท
-        save_chat_history(chat_id, 'bot', response_text)
 
-        logger.info(f"Responded to {user_name} ({chat_id}). Time: {time.time() - start_time:.4f}s")
+        # 9. 🖼️ (NEW) ตรวจสอบและส่งรูปภาพ (Image Response)
+        # ⭐️ ตรวจสอบข้อความ *เดิม* ของผู้ใช้ (user_message) กับ IMAGE_MAP
+        image_to_send = None
+        for keyword, (filepath, caption) in IMAGE_MAP.items():
+            if keyword.lower() in user_message.lower(): # ใช้ .lower() ทั้งสองฝั่ง
+                image_to_send = (filepath, caption)
+                break 
+
+        final_bot_response = response_text # ข้อความที่จะบันทึกลง Log
+
+        if image_to_send:
+            # ⭐️ ถ้าพบรูปภาพที่เกี่ยวข้อง ให้ส่งตามไป
+            filepath, caption = image_to_send
+            if os.path.exists(filepath): # ⭐️ ตรวจสอบว่าไฟล์มีอยู่จริง
+                try:
+                    # เปิดไฟล์รูปภาพในโหมด 'rb' (read binary)
+                    with open(filepath, 'rb') as image_file:
+                        await context.bot.send_photo(
+                            chat_id=chat_id,
+                            photo=image_file, # ส่งไฟล์รูปภาพ
+                            caption=f"นี่คือภาพประกอบครับ: {caption}" # ส่ง caption ที่นี่
+                        )
+                    logger.info(f"Sent supplementary image: {filepath} to {chat_id}")
+                    # อัปเดต log ที่จะบันทึก
+                    final_bot_response = f"{response_text}\n(ส่งภาพ: {caption})"
+                except Exception as e:
+                    logger.error(f"Error sending supplementary photo: {e}")
+                    # ถ้าส่งรูปไม่สำเร็จ ก็ไม่เป็นไร (ข้อความถูกส่งไปแล้ว)
+            else:
+                logger.warning(f"Image file not found (but keyword matched): {filepath}")
+                # ถ้าไม่พบไฟล์ (เช่น คุณลืมอัปโหลด) ก็ไม่ต้องส่งอะไรเพิ่ม
+
+        # 10. 🟢 บันทึกคำตอบของบอท (Log Response)
+        save_chat_history(chat_id, 'bot', final_bot_response, username)
+        
+        end_time = time.time()
+        logger.info(f"Responded to {user} ({chat_id}). Time: {time.time() - start_time:.4f}s")
 
     except genai.types.BlockedPromptException as e:
-        # จัดการกรณีที่ Gemini บล็อก Prompt (เช่น มีเนื้อหาที่ไม่เหมาะสม)
         logger.warning(f"Gemini BlockedPromptException for chat_id {chat_id}: {e}")
         await context.bot.send_message(chat_id=chat_id, text="ขออภัยครับ คำถามของคุณอาจมีเนื้อหาที่ไม่เหมาะสม ผมไม่สามารถประมวลผลได้ครับ")
     except Exception as e:
