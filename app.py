@@ -107,24 +107,24 @@ def get_chat_history(chat_id: int, limit: int = 6) -> str:
         logger.error(f"Error fetching chat history from Supabase for chat_id {chat_id}: {e}")
         return ""
 
-# --- ดึง Prompt Context จาก PDF ---
-def read_txt_text(file_path):
-    """อ่านข้อความจากไฟล์ PDF ที่กำหนด."""
+# --- (NEW) ดึง Prompt Context จากไฟล์ .txt (ประหยัด RAM) ---
+def read_txt_context(file_path):
+    """อ่านข้อความจากไฟล์ .txt ที่กำหนด (UTF-8)."""
     text = ""
     if not os.path.exists(file_path):
-        logger.critical(f"!!! CRITICAL ERROR: PDF file not found at {file_path}. Exiting. !!!")
+        logger.critical(f"!!! CRITICAL ERROR: Context file not found at {file_path}. Exiting. !!!")
         exit(1)
     try:
-        with pdfplumber.open(file_path) as pdf:
-            for page in pdf.pages:
-                text += page.extract_text() or "" # เพิ่ม or "" เพื่อป้องกัน None
+        # ⭐️ ใช้ 'open()' ของ Python แบบธรรมดา ซึ่งใช้ RAM น้อยมาก
+        with open(file_path, 'r', encoding='utf-8') as f: 
+            text = f.read()
         logger.info(f"Successfully read context from {file_path}.")
     except Exception as e:
-        logger.critical(f"!!! CRITICAL ERROR: Error reading PDF file {file_path}: {e}. Exiting. !!!")
-        exit(1) # หากอ่าน PDF ไม่ได้ ถือว่าเป็นข้อผิดพลาดร้ายแรงสำหรับบอทนี้
+        logger.critical(f"!!! CRITICAL ERROR: Error reading context file {file_path}: {e}. Exiting. !!!")
+        exit(1)
     return text
 
-PDF_CONTEXT_TEXT = read_txt_text("dataNVC.txt")
+PDF_CONTEXT_TEXT = read_txt_context("dataNVC.txt")
 
 # --- (FIXED) คลังรูปภาพสำหรับให้ Python ค้นหา (ใช้ แท็ก เป็น Key) ---
 IMAGE_LOOKUP = {
