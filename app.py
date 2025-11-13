@@ -130,16 +130,16 @@ PDF_CONTEXT_TEXT = read_pdf_text("dataNVC.pdf")
 # หากพบ จะส่งรูปภาพที่ระบุ
 IMAGE_MAP = {
     # คีย์เวิร์ด (Key): ('ชื่อไฟล์ในโฟลเดอร์ images/', 'คำบรรยายรูปภาพ')
-    "แผนที่": ('images/map.png', 'แผนที่และผังอาคารวิทยาลัย'),
-    "ผัง": ('images/pang.png', 'นี่คือผังอาคารวิทยาลัยนครศรีธรรมราชครับ'),
-    "อาคาร 1": ('images/1.png', 'นี่คือภาพอาคาร 1 ครับ'),
-    "อาคาร 2": ('images/2.png', 'นี่คือภาพอาคาร 2 ครับ'),
-    "อาคาร 3": ('images/3.png', 'นี่คือภาพอาคาร 3 ครับ'),
-    "อาคาร 4": ('images/4.png', 'นี่คือภาพอาคาร 4 ครับ'),
-    "อาคาร 5": ('images/5.png', 'นี่คือภาพอาคาร 5 ครับ'),
-    "อาคาร 6": ('images/6.png', 'นี่คือภาพอาคาร 6 ครับ'),
-    "อาคาร 7": ('images/7.png', 'นี่คือภาพอาคาร 7 ครับ'),
-    "อาคาร 8": ('images/8.png', 'นี่คือภาพอาคาร 8 ครับ'),
+    "แผนที่": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/map.png', 'แผนที่และผังอาคารวิทยาลัย'),
+    "ผัง": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/pang.png', 'นี่คือผังอาคารวิทยาลัยนครศรีธรรมราชครับ'),
+    "อาคาร 1": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/1.png', 'นี่คือภาพอาคาร 1 ครับ'),
+    "อาคาร 2": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/2.png', 'นี่คือภาพอาคาร 2 ครับ'),
+    "อาคาร 3": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/3.png', 'นี่คือภาพอาคาร 3 ครับ'),
+    "อาคาร 4": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/4.png', 'นี่คือภาพอาคาร 4 ครับ'),
+    "อาคาร 5": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/5.png', 'นี่คือภาพอาคาร 5 ครับ'),
+    "อาคาร 6": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/6.png', 'นี่คือภาพอาคาร 6 ครับ'),
+    "อาคาร 7": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/7.png', 'นี่คือภาพอาคาร 7 ครับ'),
+    "อาคาร 8": ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/8.png', 'นี่คือภาพอาคาร 8 ครับ'),
     # เพิ่มคีย์เวิร์ดและรูปภาพอื่น ๆ ตามต้องการ
 }
 
@@ -250,34 +250,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         # 9. 🖼️ (NEW) ตรวจสอบและส่งรูปภาพ (Image Response)
         # ⭐️ ตรวจสอบข้อความ *เดิม* ของผู้ใช้ (user_message) กับ IMAGE_MAP
         image_to_send = None
-        for keyword, (filepath, caption) in IMAGE_MAP.items():
-            if keyword.lower() in user_message.lower(): # ใช้ .lower() ทั้งสองฝั่ง
-                image_to_send = (filepath, caption)
+        for keyword, (image_url, caption) in IMAGE_MAP.items(): # ⭐️ เปลี่ยนชื่อ filepath เป็น image_url
+            if keyword.lower() in user_message.lower():
+                image_to_send = (image_url, caption)
                 break 
 
         final_bot_response = response_text # ข้อความที่จะบันทึกลง Log
 
         if image_to_send:
             # ⭐️ ถ้าพบรูปภาพที่เกี่ยวข้อง ให้ส่งตามไป
-            filepath, caption = image_to_send
-            if os.path.exists(filepath): # ⭐️ ตรวจสอบว่าไฟล์มีอยู่จริง
-                try:
-                    # เปิดไฟล์รูปภาพในโหมด 'rb' (read binary)
-                    with open(filepath, 'rb') as image_file:
-                        await context.bot.send_photo(
-                            chat_id=chat_id,
-                            photo=image_file, # ส่งไฟล์รูปภาพ
-                            caption=f"description: {caption}" # ส่ง caption ที่นี่
-                        )
-                    logger.info(f"Sent supplementary image: {filepath} to {chat_id}")
-                    # อัปเดต log ที่จะบันทึก
-                    final_bot_response = f"{response_text}\n(ส่งภาพ: {caption})"
-                except Exception as e:
-                    logger.error(f"Error sending supplementary photo: {e}")
-                    # ถ้าส่งรูปไม่สำเร็จ ก็ไม่เป็นไร (ข้อความถูกส่งไปแล้ว)
-            else:
-                logger.warning(f"Image file not found (but keyword matched): {filepath}")
-                # ถ้าไม่พบไฟล์ (เช่น คุณลืมอัปโหลด) ก็ไม่ต้องส่งอะไรเพิ่ม
+            image_url, caption = image_to_send
+            try:
+                # ⭐️ (CHANGED) ส่งรูปภาพโดยตรงด้วย URL
+                # เราไม่จำเป็นต้องตรวจสอบ os.path.exists() หรือ open() อีกต่อไป
+                await context.bot.send_photo(
+                    chat_id=chat_id,
+                    photo=image_url, # <--- ⭐️ ใช้ URL ที่ดึงจาก Supabase โดยตรง
+                    caption=f"นี่คือภาพประกอบครับ: {caption}"
+                )
+                logger.info(f"Sent supplementary image: {image_url} to {chat_id}")
+                final_bot_response = f"{response_text}\n(ส่งภาพ: {caption})"
+            except Exception as e:
+                # Error นี้อาจเกิดขึ้นหาก URL ผิด หรือ Bucket ไม่ได้ตั้งค่าเป็น Public
+                logger.error(f"Error sending supplementary photo from URL {image_url}: {e}")
+                # (ไม่ต้องส่งข้อความซ้ำซ้อน เพราะผู้ใช้ได้รับข้อความ Gemini ไปแล้ว)
 
         # 10. 🟢 บันทึกคำตอบของบอท (Log Response)
         save_chat_history(chat_id, 'bot', final_bot_response, username)
