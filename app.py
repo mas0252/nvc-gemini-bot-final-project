@@ -131,11 +131,15 @@ PDF_CONTEXT_TEXT = read_pdf_text("dataNVC.pdf")
 IMAGE_MAP = {
     # คีย์เวิร์ด (Key): ('ชื่อไฟล์ในโฟลเดอร์ images/', 'คำบรรยายรูปภาพ')
     "แผนที่": ('images/map.png', 'แผนที่และผังอาคารวิทยาลัย'),
-    "ที่ตั้ง": ('images/map_main.png', 'แผนที่และผังอาคารวิทยาลัย'),
-    "อาคาร 1": ('images/building_1_admin.jpg', 'อาคาร 1 (อาคารอำนวยการ)'),
-    "อาคารอำนวยการ": ('images/building_1_admin.jpg', 'อาคาร 1 (อาคารอำนวยการ)'),
-    "อาคาร 2": ('images/building_2_tech.jpg', 'อาคาร 2 (แผนกช่าง)'),
-    "อาคาร 3": ('images/building_3_commerce.jpg', 'อาคาร 3 (แผนกพณิชยการ)'),
+    "ผัง": ('images/pang.png', 'นี่คือผังอาคารวิทยาลัยนครศรีธรรมราชครับ'),
+    "อาคาร 1": ('images/1.png', 'นี่คือภาพอาคาร 1 ครับ'),
+    "อาคาร 2": ('images/2.png', 'นี่คือภาพอาคาร 2 ครับ'),
+    "อาคาร 3": ('images/3.png', 'นี่คือภาพอาคาร 3 ครับ'),
+    "อาคาร 4": ('images/4.png', 'นี่คือภาพอาคาร 4 ครับ'),
+    "อาคาร 5": ('images/5.png', 'นี่คือภาพอาคาร 5 ครับ'),
+    "อาคาร 6": ('images/6.png', 'นี่คือภาพอาคาร 6 ครับ'),
+    "อาคาร 7": ('images/7.png', 'นี่คือภาพอาคาร 7 ครับ'),
+    "อาคาร 8": ('images/8.png', 'นี่คือภาพอาคาร 8 ครับ'),
     # เพิ่มคีย์เวิร์ดและรูปภาพอื่น ๆ ตามต้องการ
 }
 
@@ -263,7 +267,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                         await context.bot.send_photo(
                             chat_id=chat_id,
                             photo=image_file, # ส่งไฟล์รูปภาพ
-                            caption=f"นี่คือภาพประกอบครับ: {caption}" # ส่ง caption ที่นี่
+                            caption=f"description: {caption}" # ส่ง caption ที่นี่
                         )
                     logger.info(f"Sent supplementary image: {filepath} to {chat_id}")
                     # อัปเดต log ที่จะบันทึก
