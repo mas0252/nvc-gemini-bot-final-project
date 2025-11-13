@@ -108,7 +108,7 @@ def get_chat_history(chat_id: int, limit: int = 6) -> str:
         return ""
 
 # --- ดึง Prompt Context จาก PDF ---
-def read_pdf_text(file_path):
+def read_txt_text(file_path):
     """อ่านข้อความจากไฟล์ PDF ที่กำหนด."""
     text = ""
     if not os.path.exists(file_path):
@@ -124,7 +124,7 @@ def read_pdf_text(file_path):
         exit(1) # หากอ่าน PDF ไม่ได้ ถือว่าเป็นข้อผิดพลาดร้ายแรงสำหรับบอทนี้
     return text
 
-PDF_CONTEXT_TEXT = read_pdf_text("dataNVC.pdf")
+PDF_CONTEXT_TEXT = read_txt_text("dataNVC.txt")
 
 # --- (FIXED) คลังรูปภาพสำหรับให้ Python ค้นหา (ใช้ แท็ก เป็น Key) ---
 IMAGE_LOOKUP = {
