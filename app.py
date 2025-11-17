@@ -139,6 +139,7 @@ IMAGE_LOOKUP = {
     'building_6': ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/6.png', 'นี่คือภาพอาคาร 6 ครับ'),
     'building_7': ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/7.png', 'นี่คือภาพอาคาร 7 ครับ'),
     'building_8': ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/8.png', 'นี่คือภาพอาคาร 8 ครับ'),
+    'building_6_632': ('https://squqrsinrzpqbvbnirzw.supabase.co/storage/v1/object/public/nvc_images/IMG_20251117_132117.jpg', 'นี่คือห้อง 632 ครับ'),
     # ❗️ ตรวจสอบว่า URL ของ Supabase ถูกต้องทั้งหมด
 }
 # --- (FIXED) คำสั่งพิเศษสำหรับ Gemini เกี่ยวกับรูปภาพ ---
@@ -157,6 +158,8 @@ IMAGE_PROMPT_INSTRUCTIONS = """
     -   เกี่ยวกับ "อาคาร 6": ให้เพิ่มแท็ก `[IMAGE:building_6]`
     -   เกี่ยวกับ "อาคาร 7": ให้เพิ่มแท็ก `[IMAGE:building_7]`
     -   เกี่ยวกับ "อาคาร 8": ให้เพิ่มแท็ก `[IMAGE:building_8]`
+    -   เกี่ยวกับ "ห้อง 632": ให้เพิ่มแท็ก `[IMAGE:building_6_632]`
+
 
     ตัวอย่างการตอบ:
     ผู้ใช้: "ตึก 1 อยู่ไหน"
