@@ -1,3 +1,18 @@
-venv/
-__pycache__/
+# --- System Files ---
+desktop.ini
+Thumbs.db
+.DS_Store
+
+# --- Local Tools & Binaries ---
+*.exe
+ngrok.exe
+ngrok
+
+# --- Environment Variables (สำคัญมาก ห้ามลบ) ---
 .env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+venv/
+env/
