@@ -48,7 +48,7 @@ if not GEMINI_API_KEY:
 # 5. ตั้งค่า Gemini AI (สมองของบอท)
 try:
     genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel('gemini-2.0-flash') # ใช้รุ่น Flash เพื่อความเร็ว
+    gemini_model = genai.GenerativeModel('gemini-1.5-flash') # ใช้รุ่น Flash เพื่อความเร็ว
     logger.info("Gemini API configured successfully.")
 except Exception as e:
     logger.critical(f"!!! CRITICAL ERROR: Gemini Config Failed: {e}. Exiting. !!!")
