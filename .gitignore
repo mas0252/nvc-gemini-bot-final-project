@@ -2,6 +2,7 @@
 desktop.ini
 Thumbs.db
 .DS_Store
+git
 
 # --- Local Tools & Binaries ---
 *.exe
@@ -10,6 +11,8 @@ ngrok
 
 # --- Environment Variables (สำคัญมาก ห้ามลบ) ---
 .env
+
+
 
 # --- Python ---
 __pycache__/
