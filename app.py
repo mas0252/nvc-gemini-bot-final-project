@@ -112,23 +112,14 @@ def get_chat_history(chat_id: int, limit: int = 6) -> str:
 
 
 def get_cached_response(message: str):
-    """ค้นหาคำตอบใน Cache (ที่มีอายุไม่เกิน 24 ชั่วโมง)"""
+    """ค้นหาคำตอบใน Cache """
     if not supabase: return None
     
     try:
         clean_message = message.strip()
-        
-        # 1. คำนวณเวลาเส้นตาย (ปัจจุบัน - 24 ชั่วโมง)
-        # คุณสามารถเปลี่ยน hours=24 เป็น minutes=30 ได้ตามต้องการ
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24) 
-        
-        # 2. แปลงเวลาเป็น format ที่ Supabase เข้าใจ (ISO 8601)
-        cutoff_str = cutoff_time.isoformat()
-
         response = supabase.table('response_cache') \
             .select('bot_response') \
             .eq('user_message', clean_message) \
-            .gt('created_at', cutoff_str) \
             .limit(1) \
             .execute()
             # .gt() ย่อมาจาก Greater Than (มากกว่า/ใหม่กว่า)
