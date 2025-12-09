@@ -11,12 +11,15 @@ from telegram.ext import Application, MessageHandler, CommandHandler, ContextTyp
 from telegram.ext.filters import TEXT as TEXT_FILTER
 # Import เครื่องมือ AI และ PDF
 import google.generativeai as genai
+# เพิ่มบรรทัดนี้เข้าไปในส่วน import ด้านบนสุดของไฟล์
+from google.api_core.exceptions import ResourceExhausted
 import pdfplumber
 # Import เครื่องมือฐานข้อมูล
 from supabase import create_client, Client
 # Import เครื่องมือโหลดค่า Config ในเครื่อง (ไม่ใช้บน Server จริง)
 from dotenv import load_dotenv
 from datetime import datetime, timedelta, timezone
+
 
 # 1. โหลดค่าความลับจากไฟล์ .env (ทำงานเฉพาะตอนรันบนคอมพิวเตอร์)
 load_dotenv() 
@@ -44,6 +47,55 @@ if not BOT_TOKEN:
 if not GEMINI_API_KEY:
     logger.critical("!!! CRITICAL ERROR: GEMINI_API_KEY not set. Exiting. !!!")
     exit(1)
+
+
+# ---  Class สำหรับจัดการ Key Rotation ---
+class GeminiKeyManager:
+    def __init__(self):
+        self.keys = []
+        self.current_index = 0
+        
+        # โหลด Key ทั้งหมดที่มีรูปแบบ GEMINI_API_KEY_1, _2, _3 ...
+        i = 1
+        while True:
+            key = os.getenv(f"GEMINI_API_KEY_{i}")
+            if key:
+                self.keys.append(key)
+                i += 1
+            else:
+                break
+        
+        # ถ้าไม่มีแบบตัวเลข ให้ลองหาแบบเดี่ยวๆ เดิม (GEMINI_API_KEY)
+        if not self.keys and os.getenv("GEMINI_API_KEY_1"):
+            self.keys.append(os.getenv("GEMINI_API_KEY_1"))
+            
+        if not self.keys:
+            logger.critical("!!! CRITICAL ERROR: No GEMINI_API_KEY found. Exiting. !!!")
+            exit(1)
+            
+        logger.info(f"Loaded {len(self.keys)} Gemini API Keys.")
+        self._configure_current_key()
+
+    def _configure_current_key(self):
+        """ตั้งค่า GenAI ด้วย Key ปัจจุบัน"""
+        current_key = self.keys[self.current_index]
+        genai.configure(api_key=current_key)
+        # ⭐️ ใช้รุ่น 1.5 Flash (เสถียรสุด)
+        self.model = genai.GenerativeModel('gemini-2.5-flash-lite') 
+        logger.info(f"Switched to Gemini Key Index: {self.current_index + 1}/{len(self.keys)}")
+
+    def rotate_key(self):
+        """สลับไปใช้ Key ถัดไป"""
+        self.current_index = (self.current_index + 1) % len(self.keys)
+        self._configure_current_key()
+
+    def get_model(self):
+        return self.model
+
+# สร้างตัวจัดการ Key (ใช้ตัวแปรนี้แทน gemini_model ตัวเก่า)
+key_manager = GeminiKeyManager()
+
+
 
 # 5. ตั้งค่า Gemini AI (สมองของบอท)
 try:
@@ -384,13 +436,34 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             """
             
             # ส่งไปถาม Gemini
-            gemini_response = gemini_model.generate_content(gemini_prompt)
+            max_retries = len(key_manager.keys) # ลองให้ครบทุกคีย์ที่มี (หรือกำหนดเลขเองเช่น 3)
             
-            if gemini_response and gemini_response.text:
-                response_text = gemini_response.text.strip()
-            
+            for attempt in range(max_retries):
+                try:
+                    # 1. ดึง Model ปัจจุบันจาก Key Manager
+                    current_model = key_manager.get_model()
+                    
+                    # 2. เรียกใช้งาน
+                    gemini_response = current_model.generate_content(gemini_prompt)
+                    
+                    if gemini_response and gemini_response.text:
+                        response_text = gemini_response.text.strip()
+                        break #ถ้าสำเร็จ ให้หยุด Loop ทันที (ออกจาก for)
+                        
+                except ResourceExhausted:
+                    # ⚠️ ถ้า Key เต็ม (Error 429)
+                    logger.warning(f"⚠️ Key {key_manager.current_index + 1} Exhausted! Switching key...")
+                    key_manager.rotate_key() # สลับไปใช้ Key ถัดไป
+                    time.sleep(1) # พักนิดนึงก่อนลองใหม่
+                    continue # วน Loop รอบถัดไป
+                    
+                except Exception as e:
+                    # ถ้าเป็น Error อื่นๆ (เช่น 404, Network) ให้หยุดเลย ไม่ต้องวน
+                    logger.error(f"Gemini Error: {e}")
+                    break
+
             if not response_text:
-                response_text = "ขออภัยครับ ระบบไม่สามารถประมวลผลคำตอบได้ในขณะนี้ กรุณาลองใหม่ภายหลังครับ"
+                response_text = "ขออภัยครับ ระบบประมวลผลหนาแน่นมาก กรุณาลองใหม่อีกครั้งในภายหลังครับ"
 
         # 3. ตรวจสอบแท็กรูปภาพจากคำตอบ (เช่น [IMAGE:map])
         image_tag = None
