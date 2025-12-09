@@ -92,17 +92,6 @@ class GeminiKeyManager:
 # สร้างตัวจัดการ Key (ใช้ตัวแปรนี้แทน gemini_model ตัวเก่า)
 key_manager = GeminiKeyManager()
 
-
-
-# 5. ตั้งค่า Gemini AI (สมองของบอท)
-try:
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel('gemini-2.5-flash-lite') # ใช้รุ่น Flash เพื่อความเร็ว
-    logger.info("Gemini API configured successfully.")
-except Exception as e:
-    logger.critical(f"!!! CRITICAL ERROR: Gemini Config Failed: {e}. Exiting. !!!")
-    exit(1)
-
 # 6. เชื่อมต่อฐานข้อมูล Supabase (ความจำระยะยาว)
 supabase: Client | None = None
 if SUPABASE_URL and SUPABASE_KEY:
