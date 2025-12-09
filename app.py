@@ -36,7 +36,6 @@ app = Flask(__name__)
 
 # 4. ดึงค่า Config จาก Environment Variables (กุญแจลับต่างๆ)
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -44,9 +43,7 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 if not BOT_TOKEN:
     logger.critical("!!! CRITICAL ERROR: BOT_TOKEN not set. Exiting. !!!")
     exit(1) # หยุดทำงานทันทีถ้าไม่มี Token
-if not GEMINI_API_KEY:
-    logger.critical("!!! CRITICAL ERROR: GEMINI_API_KEY not set. Exiting. !!!")
-    exit(1)
+
 
 
 # ---  Class สำหรับจัดการ Key Rotation ---
@@ -350,7 +347,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         [KeyboardButton("📝 การรับสมัคร"), KeyboardButton("📍 แผนที่วิทยาลัย")],
         [KeyboardButton("🔒 กฎระเบียบวินัย"), KeyboardButton("📕 รูปแบบการเรียน")],
         [KeyboardButton("🔍 สามารถสอบถามอะไรได้บ้าง")],
-        [KeyboardButton(""),KeyboardButton("☎️ ติดต่อเรา"),KeyboardButton("")] 
+        [KeyboardButton("---"),KeyboardButton("☎️ ติดต่อเรา"),KeyboardButton("---")] 
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
 
