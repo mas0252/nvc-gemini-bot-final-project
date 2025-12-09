@@ -78,7 +78,7 @@ class GeminiKeyManager:
         current_key = self.keys[self.current_index]
         genai.configure(api_key=current_key)
         # ⭐️ ใช้รุ่น 1.5 Flash (เสถียรสุด)
-        self.model = genai.GenerativeModel('gemini-2.5-flash-lite') 
+        self.model = genai.GenerativeModel('gemini-2.5-flash') 
         logger.info(f"Switched to Gemini Key Index: {self.current_index + 1}/{len(self.keys)}")
 
     def rotate_key(self):
@@ -456,12 +456,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 response_text = "ขออภัยครับ ระบบประมวลผลหนาแน่นมาก กรุณาลองใหม่อีกครั้งในภายหลังครับ"
 
         # 3. ตรวจสอบแท็กรูปภาพจากคำตอบ (เช่น [IMAGE:map])
+        # ---------------------------------------------------------
+        # 3. (UPDATED) ระบบจัดการแท็กรูปภาพแบบอัจฉริยะ
+        # ---------------------------------------------------------
         image_tag = None
         cleaned_response = response_text
-        match = re.search(r'\[IMAGE:([\w_]+)\]', response_text)
-        if match:
-            image_tag = match.group(1) # เก็บชื่อแท็กไว้
-            cleaned_response = response_text.replace(match.group(0), "").strip() # ลบแท็กออกจากข้อความที่จะส่งจริง
+        
+        # ค้นหาแท็กทั้งหมดที่มีในข้อความ
+        all_tags_found = re.findall(r'\[IMAGE:([\w_]+)\]', response_text)
+        
+        if all_tags_found:
+            # กฎ: ถ้าเจอแท็ก "มากกว่า 1 อัน" แปลว่าเป็น List รายชื่อ -> ไม่ต้องส่งรูปสักรูป!
+            # กฎ: ถ้าเจอ "แค่ 1 อัน" -> ส่งรูปนั้น
+            if len(all_tags_found) == 1:
+                image_tag = all_tags_found[0]
+                logger.info(f"Image Tag Detected: {image_tag}")
+            else:
+                logger.info(f"Multiple tags detected ({len(all_tags_found)} tags). Ignoring images to prevent spam.")
+                image_tag = None # บังคับไม่ให้ส่งรูป
+
+            # 🧹 ทำความสะอาด: ลบ "ทุกแท็ก" ออกจากข้อความที่จะส่งให้ผู้ใช้
+            # ใช้ re.sub เพื่อแทนที่ทุก pattern ด้วยค่าว่าง
+            cleaned_response = re.sub(r'\s*\[IMAGE:[\w_]+\]\s*', '', response_text).strip()
+
+            
 
         # 4. ส่งคำตอบที่เป็นข้อความกลับไป
         if cleaned_response:
