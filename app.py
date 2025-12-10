@@ -483,11 +483,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     key_manager.rotate_key() # สลับไปใช้ Key ถัดไป
                     
                     # ⭐️ (UPDATED) เพิ่มเวลาพักนานขึ้น
-                    if attempt >= 2: # ถ้า Key ที่ 3 ก็หมด ให้พักนานขึ้น
-                        logger.error("คีย์สำรองทั้งหมดกำลังถูกใช้งานจนหมดอย่างรวดเร็ว หยุดชั่วคราวเป็นเวลา 65 วินาที")
-                        time.sleep(65) # พัก 65 วินาที (เพื่อให้โควตา RPM รีเซ็ตแน่นอน)
-                    else:
-                        time.sleep(5) # ถ้า Key 1-2 หมด ให้พัก 5 วินาที
+                    time.sleep(5) # ถ้า Key 1-2 หมด ให้พัก 5 วินาที
                         
                     continue 
                     
