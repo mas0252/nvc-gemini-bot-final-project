@@ -75,6 +75,8 @@ class GeminiKeyManager:
         logger.info(f"Loaded {len(self.keys)} Gemini API Keys.")
         self._configure_current_key()
 
+
+
     def _configure_current_key(self):
         """ตั้งค่า GenAI ด้วย Key ปัจจุบัน"""
         current_key = self.keys[self.current_index]
@@ -479,8 +481,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     # ⚠️ ถ้า Key เต็ม (Error 429)
                     logger.warning(f"⚠️ Key {key_manager.current_index + 1} Exhausted! Switching key...")
                     key_manager.rotate_key() # สลับไปใช้ Key ถัดไป
-                    time.sleep(1) # พักนิดนึงก่อนลองใหม่
-                    continue # วน Loop รอบถัดไป
+                    
+                    # ⭐️ (UPDATED) เพิ่มเวลาพักนานขึ้น
+                    time.sleep(5) # พัก 5 วินาที ก่อนจะลอง Key ถัดไป
+                    
+                    continue 
                     
                 except Exception as e:
                     # ถ้าเป็น Error อื่นๆ (เช่น 404, Network) ให้หยุดเลย ไม่ต้องวน
