@@ -483,7 +483,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     key_manager.rotate_key() # สลับไปใช้ Key ถัดไป
                     
                     # ⭐️ (UPDATED) เพิ่มเวลาพักนานขึ้น
-                    time.sleep(5) # ถ้า Key 1-2 หมด ให้พัก 5 วินาที
+                    time.sleep(1) # ถ้า Key 1-2 หมด ให้พัก 1 วินาที
                         
                     continue 
                     
